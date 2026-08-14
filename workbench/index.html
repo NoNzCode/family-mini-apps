@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>笔记情况台</title>
+<style>
+  :root{
+    --primary:#4F6EF7;
+    --primary-soft:#EEF1FE;
+    --danger:#E5484D;
+    --danger-soft:#FCEBEC;
+    --ok:#2BA471;
+    --bg:#F5F6FA;
+    --card:#FFFFFF;
+    --text:#1F2330;
+    --sub:#8A8F9C;
+    --line:#ECECF1;
+    --radius:16px;
+    --shadow:0 2px 12px rgba(31,35,48,.06);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--text);
+    font-size:15px;line-height:1.5;
+    padding:16px 16px calc(16px + env(safe-area-inset-bottom));
+    max-width:960px;margin:0 auto;
+  }
+  h1{font-size:22px;margin:0;font-weight:700;}
+  h2{font-size:17px;margin:0 0 12px;font-weight:700;display:flex;align-items:center;gap:8px;}
+  h3{font-size:14px;margin:0 0 10px;color:var(--sub);font-weight:600;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .sub{color:var(--sub);font-size:13px;margin-top:2px;}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  .btn{
+    display:inline-flex;align-items:center;gap:6px;
+    min-height:44px;padding:0 14px;border-radius:10px;
+    font-size:14px;font-weight:600;background:var(--primary-soft);color:var(--primary);
+    border:1px solid transparent;transition:.15s;
+  }
+  .btn:hover{filter:brightness(.97);}
+  .btn.primary{background:var(--primary);color:#fff;}
+  .btn.ghost{background:#fff;color:var(--text);border:1px solid var(--line);}
+  .btn.danger{background:var(--danger-soft);color:var(--danger);}
+  .btn svg{width:18px;height:18px;}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px;}
+  /* 今天要处理 */
+  .today{border:1px solid var(--primary-soft);background:linear-gradient(180deg,#FBFCFF,#FFFFFF);}
+  .today h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--primary);display:inline-block;margin-right:2px;animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(79,110,247,.4)}70%{box-shadow:0 0 0 8px rgba(79,110,247,0)}100%{box-shadow:0 0 0 0 rgba(79,110,247,0)}}
+  .titem{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line);}
+  .titem:first-of-type{border-top:none;}
+  .titem .meta{flex:1;min-width:0;}
+  .titem .title{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .titem .date{font-size:12px;color:var(--sub);}
+  .titem.overdue .date{color:var(--danger);font-weight:600;}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:20px;background:var(--primary-soft);color:var(--primary);margin-left:6px;}
+  .empty{color:var(--sub);font-size:13px;padding:8px 0;text-align:center;}
+  .warnbox{background:var(--danger-soft);color:var(--danger);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  /* tabs */
+  .tabs{display:flex;gap:6px;background:#fff;border-radius:12px;padding:5px;box-shadow:var(--shadow);margin-bottom:14px;overflow-x:auto;}
+  .tab{flex:1;min-width:90px;min-height:42px;border-radius:9px;font-size:14px;font-weight:600;color:var(--sub);background:transparent;white-space:nowrap;}
+  .tab.active{background:var(--primary);color:#fff;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  /* form */
+  .formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px;}
+  label{display:block;font-size:12px;color:var(--sub);margin-bottom:4px;}
+  input,select,textarea{
+    width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;
+    font-size:16px;font-family:inherit;background:#fff;color:var(--text);
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary);}
+  textarea{resize:vertical;min-height:60px;}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px;}
+  .stat{background:var(--primary-soft);border-radius:12px;padding:12px;text-align:center;}
+  .stat .num{font-size:24px;font-weight:800;color:var(--primary);}
+  .stat .lbl{font-size:12px;color:var(--sub);margin-top:2px;}
+  .chartwrap{margin-top:6px;}
+  .chartwrap svg{width:100%;height:auto;display:block;}
+  /* list */
+  .list{display:flex;flex-direction:column;gap:8px;}
+  .row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;}
+  .row .body{flex:1;min-width:0;}
+  .row .rt{font-weight:600;font-size:14px;}
+  .row .rs{font-size:12px;color:var(--sub);margin-top:2px;}
+  .row.done{opacity:.6;}
+  .row .act{display:flex;gap:6px;flex-shrink:0;}
+  .iconbtn{width:40px;height:40px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;background:var(--primary-soft);color:var(--primary);}
+  .iconbtn.danger{background:var(--danger-soft);color:var(--danger);}
+  .iconbtn svg{width:18px;height:18px;}
+  .stars{color:#F5A623;font-size:13px;letter-spacing:1px;}
+  .pill{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--primary-soft);color:var(--primary);}
+  .pill.over{background:var(--danger-soft);color:var(--danger);}
+  .filterbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .filterbar input{flex:1;min-width:120px;}
+  .hidden{display:none!important;}
+  @media(max-width:768px){
+    body{padding:12px 12px calc(12px + env(safe-area-inset-bottom));}
+    h1{font-size:20px;}
+    .topbar{flex-direction:column;align-items:stretch;}
+    .btnrow{justify-content:stretch;}
+    .btn{flex:1;justify-content:center;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>笔记情况台</h1>
+    <div class="sub">产出统计 · 复习计划 · 素材库</div>
+  </div>
+  <div class="btnrow">
+    <button class="btn ghost" onclick="exportJSON()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+      导出JSON
+    </button>
+    <button class="btn ghost" onclick="document.getElementById('importFile').click()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 9l5-5 5 5"/><path d="M12 4v12"/></svg>
+      导入恢复
+    </button>
+    <button class="btn danger" onclick="clearAll()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      清空数据
+    </button>
+    <input type="file" id="importFile" accept="application/json" class="hidden" onchange="importJSON(this.files[0])">
+  </div>
+</div>
+
+<div id="rateWarn" class="warnbox hidden">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex-shrink:0"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.3 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.3a2 2 0 0 0-3.4 0z"/></svg>
+  <span>数据已积累 30 条，建议导出备份以防丢失。</span>
+</div>
+
+<!-- 今天要处理 -->
+<div class="card today">
+  <h2><span class="dot"></span>今天要处理</h2>
+  <div id="todayList"></div>
+</div>
+
+<!-- tabs -->
+<div class="tabs">
+  <button class="tab active" data-tab="prod" onclick="switchTab('prod')">产出统计</button>
+  <button class="tab" data-tab="review" onclick="switchTab('review')">复习计划</button>
+  <button class="tab" data-tab="material" onclick="switchTab('material')">素材库</button>
+</div>
+
+<!-- 产出统计 -->
+<div class="panel active" id="panel-prod">
+  <div class="card">
+    <h2>产出统计</h2>
+    <div class="stats" id="prodStats"></div>
+    <div class="chartwrap" id="prodChart"></div>
+  </div>
+  <div class="card">
+    <h3>记录今日产出</h3>
+    <div class="formgrid">
+      <div><label>日期</label><input type="date" id="p_date"></div>
+      <div><label>主题分类</label><input type="text" id="p_category" placeholder="如：技术 / 读书"></div>
+      <div><label>篇数</label><input type="number" id="p_count" min="1" value="1"></div>
+      <div><label>字数（选填）</label><input type="number" id="p_words" min="0" placeholder="0"></div>
+    </div>
+    <label>备注（选填）</label>
+    <textarea id="p_note" placeholder="这波笔记写了啥"></textarea>
+    <div style="margin-top:10px"><button class="btn primary" onclick="addProd()">+ 添加记录</button></div>
+  </div>
+  <div class="card">
+    <h3>产出记录</h3>
+    <div class="list" id="prodList"></div>
+  </div>
+</div>
+
+<!-- 复习计划 -->
+<div class="panel" id="panel-review">
+  <div class="card">
+    <h3>添加复习项</h3>
+    <div class="formgrid">
+      <div><label>笔记标题</label><input type="text" id="r_title" placeholder="如：间隔重复原理"></div>
+      <div><label>主题分类</label><input type="text" id="r_category" placeholder="如：学习方法"></div>
+      <div><label>下次复习日期</label><input type="date" id="r_next"></div>
+      <div><label>间隔天数</label><input type="number" id="r_interval" min="1" value="1"></div>
+      <div><label>掌握度（1-5）</label>
+        <select id="r_mastery">
+          <option value="1">1 · 刚接触</option>
+          <option value="2">2 · 模糊</option>
+          <option value="3" selected>3 · 一般</option>
+          <option value="4">4 · 较熟</option>
+          <option value="5">5 · 精通</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:6px"><button class="btn primary" onclick="addReview()">+ 添加复习项</button></div>
+  </div>
+  <div class="card">
+    <h3>复习清单（逾期标红）</h3>
+    <div class="list" id="reviewList"></div>
+  </div>
+</div>
+
+<!-- 素材库 -->
+<div class="panel" id="panel-material">
+  <div class="card">
+    <h3>添加素材</h3>
+    <div class="formgrid">
+      <div style="grid-column:1/-1"><label>内容 / 链接</label><input type="text" id="m_content" placeholder="金句、灵感或链接"></div>
+      <div><label>分类标签</label><input type="text" id="m_tag" placeholder="如：方法"></div>
+      <div><label>来源</label><input type="text" id="m_source" placeholder="如：读书 / 网页"></div>
+      <div><label>评分（1-5）</label>
+        <select id="m_rating">
+          <option value="5">5 · 极好</option>
+          <option value="4" selected>4 · 不错</option>
+          <option value="3">3 · 一般</option>
+          <option value="2">2 · 一般般</option>
+          <option value="1">1 · 备用</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:6px"><button class="btn primary" onclick="addMaterial()">+ 添加素材</button></div>
+  </div>
+  <div class="card">
+    <div class="filterbar">
+      <input type="text" id="m_filter" placeholder="搜索内容 / 标签 / 来源" oninput="renderMaterial()">
+    </div>
+    <div class="list" id="materialList"></div>
+  </div>
+</div>
+
+<script>
+const PREFIX='wb_notes_';
+const K_PROD=PREFIX+'prod', K_REVIEW=PREFIX+'review', K_MAT=PREFIX+'material', K_SEED=PREFIX+'seeded';
+
+function load(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v));}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function fmt(d){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),da=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${da}`;}
+function todayStr(){return fmt(new Date());}
+function addDays(s,n){const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return fmt(d);}
+function md(s){return s.slice(5);}
+
+function seed(){
+  if(load(K_SEED,false))return;
+  const t=todayStr(),y=addDays(t,-1),y2=addDays(t,-2),y3=addDays(t,-3),f3=addDays(t,3);
+  save(K_PROD,[
+    {id:uid(),date:y3,category:'技术',count:2,words:1500,note:'Obsidian 插件笔记'},
+    {id:uid(),date:y2,category:'读书',count:1,words:800,note:''},
+    {id:uid(),date:y,category:'技术',count:3,words:2200,note:'工作台搭建思路'}
+  ]);
+  save(K_REVIEW,[
+    {id:uid(),title:'间隔重复原理',category:'学习方法',nextReview:y,interval:2,mastery:3,status:'todo',lastReview:y2},
+    {id:uid(),title:'SVG 折线图手写',category:'技术',nextReview:t,interval:1,mastery:4,status:'todo',lastReview:y},
+    {id:uid(),title:'Obsidian 双链',category:'工具',nextReview:f3,interval:7,mastery:2,status:'todo',lastReview:y}
+  ]);
+  save(K_MAT,[
+    {id:uid(),content:'《怎样做笔记》核心：用自己的话复述',tag:'方法',source:'读书',rating:5,addedAt:y2},
+    {id:uid(),content:'https://example.com/spaced-repetition',tag:'链接',source:'网页',rating:4,addedAt:y}
+  ]);
+  save(K_SEED,true);
+}
+
+/* ---------- 今天要处理 ---------- */
+function renderToday(){
+  const t=todayStr();
+  const review=load(K_REVIEW,[]);
+  const due=review.filter(r=>r.status!=='done'&&r.nextReview<=t);
+  const prod=load(K_PROD,[]);
+  const recToday=prod.some(p=>p.date===t);
+  const el=document.getElementById('todayList');
+  let html='';
+  if(due.length===0 && recToday){
+    html='<div class="empty">🎉 今天没有待处理事项，保持节奏！</div>';
+  }else{
+    due.forEach(r=>{
+      const over=r.nextReview<t;
+      html+=`<div class="titem ${over?'overdue':''}">
+        <div class="meta">
+          <div class="title">复习：${esc(r.title)}<span class="tag">${esc(r.category)}</span></div>
+          <div class="date">${over?'逾期 ':'今天 '}${md(r.nextReview)} · 掌握度 ${r.mastery}/5</div>
+        </div>
+        <button class="btn primary" style="min-height:40px;padding:0 12px" onclick="completeReview('${r.id}')">完成</button>
+      </div>`;
+    });
+    if(!recToday){
+      html+=`<div class="titem">
+        <div class="meta">
+          <div class="title">今天还没记录笔记产出</div>
+          <div class="date">写了多少篇？记一笔保持连续打卡</div>
+        </div>
+        <button class="btn" style="min-height:40px;padding:0 12px" onclick="switchTab('prod')">去记录</button>
+      </div>`;
+    }
+  }
+  el.innerHTML=html;
+}
+
+function completeReview(id){
+  const review=load(K_REVIEW,[]);
+  const r=review.find(x=>x.id===id);
+  if(!r)return;
+  r.status='done';r.lastReview=todayStr();r.nextReview=addDays(todayStr(),r.interval||1);
+  save(K_REVIEW,review);
+  renderAll();
+}
+
+/* ---------- 产出统计 ---------- */
+function prodStats(){
+  const t=todayStr(),prod=load(K_PROD,[]);
+  const todayC=prod.filter(p=>p.date===t).reduce((s,p)=>s+(+p.count||0),0);
+  const now=new Date(),dow=(now.getDay()+6)%7,ws=addDays(t,-dow);
+  const weekC=prod.filter(p=>p.date>=ws&&p.date<=t).reduce((s,p)=>s+(+p.count||0),0);
+  const mon=t.slice(0,7);
+  const monC=prod.filter(p=>p.date.slice(0,7)===mon).reduce((s,p)=>s+(+p.count||0),0);
+  let streak=0,cur=t;
+  while(prod.some(p=>p.date===cur)){streak++;cur=addDays(cur,-1);}
+  return {todayC,weekC,monC,streak};
+}
+
+function renderProdStats(){
+  const s=prodStats();
+  document.getElementById('prodStats').innerHTML=`
+    <div class="stat"><div class="num">${s.todayC}</div><div class="lbl">今日篇数</div></div>
+    <div class="stat"><div class="num">${s.weekC}</div><div class="lbl">本周篇数</div></div>
+    <div class="stat"><div class="num">${s.monC}</div><div class="lbl">本月篇数</div></div>
+    <div class="stat"><div class="num">${s.streak}</div><div class="lbl">连续打卡(天)</div></div>`;
+}
+
+function renderProdChart(){
+  const t=todayStr(),days=[];
+  for(let i=13;i>=0;i--)days.push(addDays(t,-i));
+  const prod=load(K_PROD,[]);
+  const counts=days.map(d=>prod.filter(p=>p.date===d).reduce((s,p)=>s+(+p.count||0),0));
+  const max=Math.max(1,...counts);
+  const W=320,H=150,pl=26,pb=22,pt=12,pr=8,pw=W-pl-pr,ph=H-pt-pb;
+  const X=i=>pl+pw*(i/(days.length-1));
+  const Y=v=>pt+ph*(1-v/max);
+  let grid='',line='',dots='',xlab='';
+  [0,max/2,max].forEach(v=>{
+    const y=Y(v);
+    grid+=`<line x1="${pl}" y1="${y}" x2="${W-pr}" y2="${y}" stroke="#ECECF1" stroke-width="1"/>`;
+    grid+=`<text x="${pl-4}" y="${y+3}" font-size="9" fill="#8A8F9C" text-anchor="end">${Math.round(v)}</text>`;
+  });
+  counts.forEach((c,i)=>{line+=(i?'L':'M')+X(i)+' '+Y(c)+' ';});
+  counts.forEach((c,i)=>{dots+=`<circle cx="${X(i)}" cy="${Y(c)}" r="${c>0?3:2}" fill="${c>0?'#4F6EF7':'#C9CDD8'}"/>`;});
+  days.forEach((d,i)=>{if(i%3===0||i===days.length-1){xlab+=`<text x="${X(i)}" y="${H-6}" font-size="9" fill="#8A8F9C" text-anchor="middle">${md(d)}</text>`;}});
+  document.getElementById('prodChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="近14天产出趋势">
+    ${grid}<path d="${line}" fill="none" stroke="#4F6EF7" stroke-width="2" stroke-linejoin="round"/>${dots}${xlab}</svg>`;
+}
+
+function renderProdList(){
+  const prod=load(K_PROD,[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  const el=document.getElementById('prodList');
+  if(!prod.length){el.innerHTML='<div class="empty">还没有产出记录</div>';return;}
+  el.innerHTML=prod.map(p=>`<div class="row">
+    <div class="body">
+      <div class="rt">${md(p.date)} · ${esc(p.category)} <span class="pill">${p.count}篇</span></div>
+      <div class="rs">${p.words?p.words+'字 · ':''}${esc(p.note||'无备注')}</div>
+    </div>
+    <div class="act"><button class="iconbtn danger" onclick="delProd('${p.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
+  </div>`).join('');
+}
+
+function addProd(){
+  const date=document.getElementById('p_date').value||todayStr();
+  const category=document.getElementById('p_category').value.trim()||'未分类';
+  const count=parseInt(document.getElementById('p_count').value)||1;
+  const words=parseInt(document.getElementById('p_words').value)||0;
+  const note=document.getElementById('p_note').value.trim();
+  const prod=load(K_PROD,[]);
+  prod.push({id:uid(),date,category,count,words,note});
+  save(K_PROD,prod);
+  document.getElementById('p_category').value='';document.getElementById('p_count').value=1;
+  document.getElementById('p_words').value='';document.getElementById('p_note').value='';
+  document.getElementById('p_date').value=todayStr();
+  renderAll();
+}
+function delProd(id){const prod=load(K_PROD,[]).filter(p=>p.id!==id);save(K_PROD,prod);renderAll();}
+
+/* ---------- 复习计划 ---------- */
+function renderReview(){
+  const t=todayStr();
+  const review=load(K_REVIEW,[]).slice().sort((a,b)=>a.nextReview.localeCompare(b.nextReview));
+  const el=document.getElementById('reviewList');
+  if(!review.length){el.innerHTML='<div class="empty">还没有复习项</div>';return;}
+  el.innerHTML=review.map(r=>{
+    const over=r.nextReview<t && r.status!=='done';
+    const done=r.status==='done';
+    const stars='★'.repeat(r.mastery)+'☆'.repeat(5-r.mastery);
+    return `<div class="row ${done?'done':''}">
+      <div class="body">
+        <div class="rt">${esc(r.title)} <span class="pill ${over?'over':''}">${done?'已完成':(over?'逾期 '+md(r.nextReview):' '+md(r.nextReview))}</span></div>
+        <div class="rs">${esc(r.category)} · 间隔${r.interval}天 · <span class="stars">${stars}</span></div>
+      </div>
+      <div class="act">
+        ${done?'':`<button class="iconbtn" onclick="completeReview('${r.id}')" title="完成"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>`}
+        <button class="iconbtn danger" onclick="delReview('${r.id}')" title="删除"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function addReview(){
+  const title=document.getElementById('r_title').value.trim();
+  if(!title){alert('请填写笔记标题');return;}
+  const category=document.getElementById('r_category').value.trim()||'未分类';
+  const nextReview=document.getElementById('r_next').value||todayStr();
+  const interval=parseInt(document.getElementById('r_interval').value)||1;
+  const mastery=parseInt(document.getElementById('r_mastery').value)||3;
+  const review=load(K_REVIEW,[]);
+  review.push({id:uid(),title,category,nextReview,interval,mastery,status:'todo',lastReview:todayStr()});
+  save(K_REVIEW,review);
+  document.getElementById('r_title').value='';document.getElementById('r_category').value='';
+  document.getElementById('r_next').value=todayStr();document.getElementById('r_interval').value=1;
+  renderAll();
+}
+function delReview(id){const review=load(K_REVIEW,[]).filter(r=>r.id!==id);save(K_REVIEW,review);renderAll();}
+
+/* ---------- 素材库 ---------- */
+function renderMaterial(){
+  const f=document.getElementById('m_filter').value.trim().toLowerCase();
+  let mat=load(K_MAT,[]).slice().sort((a,b)=>b.addedAt.localeCompare(a.addedAt));
+  if(f)mat=mat.filter(m=>(m.content+' '+m.tag+' '+m.source).toLowerCase().includes(f));
+  const el=document.getElementById('materialList');
+  if(!mat.length){el.innerHTML='<div class="empty">没有匹配的素材</div>';return;}
+  el.innerHTML=mat.map(m=>{
+    const stars='★'.repeat(m.rating)+'☆'.repeat(5-m.rating);
+    const isUrl=/^https?:\/\//.test(m.content);
+    return `<div class="row">
+      <div class="body">
+        <div class="rt">${isUrl?`<a href="${esc(m.content)}" target="_blank" rel="noopener" style="color:var(--primary)">${esc(m.content)}</a>`:esc(m.content)}</div>
+        <div class="rs"><span class="pill">${esc(m.tag)}</span> ${esc(m.source)} · ${md(m.addedAt)} · <span class="stars">${stars}</span></div>
+      </div>
+      <div class="act"><button class="iconbtn danger" onclick="delMat('${m.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg></button></div>
+    </div>`;
+  }).join('');
+}
+function addMaterial(){
+  const content=document.getElementById('m_content').value.trim();
+  if(!content){alert('请填写内容或链接');return;}
+  const tag=document.getElementById('m_tag').value.trim()||'未分类';
+  const source=document.getElementById('m_source').value.trim()||'手动';
+  const rating=parseInt(document.getElementById('m_rating').value)||4;
+  const mat=load(K_MAT,[]);
+  mat.push({id:uid(),content,tag,source,rating,addedAt:todayStr()});
+  save(K_MAT,mat);
+  document.getElementById('m_content').value='';document.getElementById('m_tag').value='';document.getElementById('m_source').value='';
+  renderAll();
+}
+function delMat(id){const mat=load(K_MAT,[]).filter(m=>m.id!==id);save(K_MAT,mat);renderAll();}
+
+/* ---------- 备份 ---------- */
+function exportJSON(){
+  const data={prod:load(K_PROD,[]),review:load(K_REVIEW,[]),material:load(K_MAT,[])};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download='笔记情况台备份_'+todayStr()+'.json';a.click();
+  URL.revokeObjectURL(url);
+}
+function importJSON(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(Array.isArray(data.prod))save(K_PROD,data.prod);
+      if(Array.isArray(data.review))save(K_REVIEW,data.review);
+      if(Array.isArray(data.material))save(K_MAT,data.material);
+      save(K_SEED,true);
+      renderAll();
+      alert('导入成功，共 '+(data.prod?.length||0)+(data.review?.length||0)+(data.material?.length||0)+' 条');
+    }catch(err){alert('导入失败：文件格式不正确');}
+  };
+  reader.readAsText(file);
+}
+function clearAll(){
+  if(!confirm('确定清空全部数据吗？此操作不可恢复！'))return;
+  localStorage.removeItem(K_PROD);localStorage.removeItem(K_REVIEW);localStorage.removeItem(K_MAT);
+  save(K_SEED,true);
+  renderAll();
+}
+
+/* ---------- utils ---------- */
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));
+}
+function checkRateWarn(){
+  const n=load(K_PROD,[]).length+load(K_REVIEW,[]).length+load(K_MAT,[]).length;
+  document.getElementById('rateWarn').classList.toggle('hidden',n<30);
+}
+function renderAll(){
+  renderToday();renderProdStats();renderProdChart();renderProdList();
+  renderReview();renderMaterial();checkRateWarn();
+}
+
+/* init */
+seed();
+document.getElementById('p_date').value=todayStr();
+document.getElementById('r_next').value=todayStr();
+renderAll();
+</script>
+</body>
+</html>
