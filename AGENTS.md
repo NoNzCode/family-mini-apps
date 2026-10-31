@@ -1,76 +1,133 @@
 # AGENTS.md — 仓库记忆与开发规范
 
-> 本文件是给 AI 编程助手（以及未来的自己）看的项目上下文，包含仓库约定、目录规范和数据结构说明。修改项目结构或约定时请同步更新本文件。
+> 给 AI 编程助手（以及未来的自己）看的项目上下文：仓库约定、目录结构、数据格式与行为规则。修改项目结构或数据格式时请同步更新本文件。
 
 ## 仓库定位
 
-以 HTML 单文件应用为主的学习与娱乐作品集合，重点是轻量、可离线运行、适配移动端的工作台/小游戏。无构建工具、无外部依赖，浏览器直接打开即可运行。
+三个面向家人的轻量前端应用：Canvas 小游戏、笔记/产出工作台、学龄前识字练习台。
+
+- 每个项目都是**单文件 HTML（内联 CSS/JS）+ 少量资源**，无构建工具、无 npm 依赖、无 CDN 外链，可离线运行。
+- 数据持久化在浏览器 localStorage，均提供 JSON 导出/导入。
+- 浏览器直接打开 `index.html`，或 `python -m http.server` 起静态服务（手机访问时更方便）。
 
 ## 目录规范
 
 ```
 family-mini-apps/
-├── octopus-game/        # Canvas 小游戏（章鱼大战）
-│   ├── index.html       # 入口，每个项目入口统一叫 index.html
-│   ├── css/  js/  assets/
-├── workbench/           # 工作台（笔记情况台）
+├── octopus-game/        # 海底大冒险（Canvas 游戏）
 │   ├── index.html
-│   ├── css/  js/  assets/
-└── literacy-station/    # 识字启蒙台
-    ├── index.html
-    ├── __chk.js         # 题库检查点数据（家长模式导出/还原），保持在 index.html 同级
-    ├── css/  js/  assets/
+│   ├── assets/          # 5 张角色/背景原图 + anim/ 每角色 3 帧动画序列
+│   └── css/ js/         # 预留空目录（.gitkeep）
+├── workbench/           # 笔记情况台
+│   ├── index.html
+│   └── css/ js/ assets/ # 预留空目录（.gitkeep）
+├── literacy-station/    # 识字启蒙台
+│   ├── index.html
+│   ├── __chk.js         # 题库检查点（被 .gitignore 忽略，不入库）
+│   └── css/ assets/     # 预留空目录（.gitkeep）
+├── AGENTS.md  CHANGELOG.md  README.md  LICENSE
 ```
 
-- 项目文件夹名统一用小写英文 + 连字符（如 `literacy-station`），**不要用中文命名**。
-- 代码量大时才把 CSS/JS 拆到 `css/`、`js/` 子目录；小工具保持单文件即可。
-- 图片、音频等静态资源放 `assets/`。
+- 项目目录名用小写英文 + 连字符，**不要用中文命名**。
+- 每个项目入口统一叫 `index.html`；代码量小时保持单文件，不为了“规范”提前拆分。
+- 静态资源放 `assets/`；`css/`、`js/` 目前只是占位，没有实际文件。
 
-## 开发约定
+## 数据与存储
 
-- 优先保持“单文件 HTML + 内联样式/脚本”的自包含形式，尽量不引入外部依赖和框架。
-- 数据以 localStorage 持久化，各项目使用独立的 key/前缀，改动前先确认是否影响现有数据格式。
-- 交互兼顾移动端：按钮尺寸足够大、输入框避免过小、考虑底部安全区。
-- 需要用户数据导入/导出、重置确认、二次确认等保护机制时，优先保留。
-- 视觉上尽量使用内联 SVG / 图标 / 图表，避免外链资源。
-- 改动保持简洁、可读、可回退；新功能优先在现有页面结构上扩展。
+| 项目 | localStorage 键 | 内容 |
+|---|---|---|
+| workbench | `wb_notes_prod` | 产出记录 `{id,date,category,count,words,note}` |
+| workbench | `wb_notes_review` | 复习项 `{id,title,category,nextReview,interval,mastery,status,lastReview}` |
+| workbench | `wb_notes_material` | 素材 `{id,content,tag,source,rating,addedAt}` |
+| workbench | `wb_notes_seeded` | 是否已写入示例数据（`seed()` 只执行一次） |
+| literacy-station | `wb_literacy_db` | 完整状态，见下 |
+| octopus-game | 无 | 纯内存，刷新即重开 |
+
+`wb_literacy_db` 结构：
+
+```js
+{
+  chars: [{ id, hanzi, pinyin, words: [], learned }],  // 字库 + 学习状态
+  assignments: [{ id, date, charIds: [], done, flags }], // 每日任务记录
+  rewards: [{ id, name, cost }],                        // 兑换商城
+  exchanges: [{ id, rewardId, ts, status }],            // 兑换申请（pending/已确认）
+  points: 0,                                            // 积分
+  parentPwd: null                                        // 4 位家长密码（明文，仅防误触）
+}
+```
+
+- 改动键名/字段前必须考虑老数据：先做兼容读取或迁移，再更新本文件。
+- 不要为了“整洁”清空用户 localStorage；清空类操作必须二次确认。
+- `.gitignore` 已忽略 `literacy-station/__chk.js`（本地数据快照），不要用 `git add -f` 强加。
 
 ## 各项目要点
 
-### octopus-game/
+### octopus-game/（海底大冒险）
 
-- Canvas 网页游戏：响应式画布、实体 AI（鲨鱼/章鱼/水母/鱼）、碰撞与得分、键盘控制（WASD / 方向键）、开始/加载界面。
-- 资源在 `assets/`（octopus/shark/jellyfish/fish/seabed 图片）。
+- 玩家操控的是**鲨鱼**，不是章鱼：`WASD` / 方向键移动，`R` 重开，点击开始遮罩开始游戏。
+- 实体与得分（`ENTITY_TYPES`）：鲨鱼吃章鱼/水母 +10，吃小鱼 +2；章鱼/水母会吃小鱼但不计分；鲨鱼体型（radius 100）远大于其他实体。
+- **帧动画**：`assets/anim/` 下每角色 12 张透明 WebP 序列帧（`{type}_f01~f12.webp`），由**单张 AI 基础图经程序化网格形变派生**（脚本 `.trae/tools/build_anim.py`，输入 `assets/anim/src/{type}_base.jpg` 绿幕单帧图，抠绿幕 → bbox 裁剪 → pad 13% 最长边+16px → 网格位移形变 → 高 400px WebP）。由 `FRAME_ASSETS` 声明、`getFrames()` 校验（12 帧全成功才启用，否则回退 `assets/` 静态图）。节奏由 `ENTITY_TYPES.frameMs` 控制（fish 100 / shark 100 / octopus 140 / jellyfish 160）；鱼/鲨鱼摆尾速度随游速缩放，章鱼/水母恒定脉动；帧相位随机防止同类实体同步。
+- 12 帧形变方案：鱼/鲨鱼尾部纵向位移波（摆幅 7.5%/5.5% 高），章鱼触手横向摆动+整体浮动，水母伞盖 ±8% 缩放+触手摆动；相位 `k/12` 首尾无缝循环。
+- 帧的生成/切分流程见 `CHANGELOG.md` 2026-10-29 两条目；`assets/anim/src/{type}_base.jpg` 是单张基础图，保留以便重生成。
+- Canvas 随窗口 `resize` 重算尺寸；`assets/` 5 张原图仍作为背景与回退资源，删除前确认 `anim/` 帧齐全。
+- **只有键盘输入，没有触控/虚拟摇杆**，移动端无法游玩；若要移动端适配需新增加触控层（目前未做）。
 
-### workbench/
+### workbench/（笔记情况台）
 
-- 个人笔记与产出追踪面板：产出统计（今日/本周/本月/连续打卡）、近 14 天 SVG 折线图、复习计划（间隔重复/逾期标红/一键完成）、素材库（标签/来源/评分/搜索）、导入/导出 JSON。
-- localStorage 前缀：`wb_notes_`。
+- 顶部「今天要处理」：待复习（`nextReview <= 今天` 且未完成）+ 今日是否已记产出。
+- 三个 tab：产出统计、复习计划、素材库。
+- 产出统计：今日 / 本周（以周一为起点）/ 本月 / 连续打卡（从今天往前逐日连续计数），数据来自 `wb_notes_prod`；以下方 SVG 绘制近 14 天折线图。
+- 复习：过期项标红；「完成」把 `status` 设为 `done`，`nextReview = 今天 + interval`；**interval 不会自动递增**，需要手动改间隔。
+- 素材库：内容 / 标签 / 来源 / 评分，支持搜索。
+- 首次运行 `seed()` 写入示例数据；「清空数据」会移除三个数据键并保留 `wb_notes_seeded`，避免示例数据被重新灌入。
+- 数据量达到 30 条时顶部显示备份提醒。
 
-### literacy-station/
+### literacy-station/（识字启蒙台）
 
-- 面向学龄前儿童的识字练习与家长管理，双数据源分离：
-  - **实时进度 DB**（localStorage key: `wb_literacy_db`）：每个字的 `learned` 状态、累计积分、兑换记录、家长 PIN。
-  - **题库检查点**（`__chk.js` 定义 `window.BACKUP_STATE`）：识字卡片/识字练习/组词练习/每日任务的题目来源；家长点「保存」导出新检查点文件，点「还原」从检查点恢复。题库本身不被练习修改。
-- 宝宝模式（默认）：每日任务 10 字、3D 翻转卡片（+10 分）、识字练习/组词练习（+5 分）、闯关积分与兑换商城。
-- 家长模式：4 位数字 PIN 保护，发布任务、添加组词、设置奖励、确认兑换、数据管理（清空/保存检查点/还原/导入导出 JSON）。
-- `__chk.js` 必须与 `index.html` 同级（`<script src="__chk.js">`），不要移到子目录。
+- **双数据源**：
+  - 实时进度 DB：`wb_literacy_db`（上面的结构），记录 `learned`、积分、兑换、家长密码。
+  - 题库检查点：`__chk.js` 定义 `window.BACKUP_STATE`（含 `chars` 等），是卡片/识字练习/组词练习/每日任务的题目来源。
+  - `getQuizPool()` 优先用 `window.BACKUP_STATE.chars`，没有时才回退到 `state.chars`（内置 100 字默认题库）。
+- 宝宝模式（默认）：
+  - 每日任务：每次会话从题库随机抽 10 个字（`todayTask` 只缓存在内存，刷新会重抽），学会后打勾。
+  - 3D 翻转卡片：仅当该字原来 `learned=false` 时首次标记学会并 +10 分（重复点不再加分）。
+  - 识字练习、组词练习：答对 +5 分。
+  - 积分商城：宝宝发起兑换申请（`status: pending`），家长在家长模式确认后才扣分。
+- 家长模式：首次进入设置 4 位数字密码，之后校验；密码明文存在 localStorage，**只防误触，不是安全措施**。
+- 「保存检查点」是**生成并下载**新的 `__chk.js`，需要手动覆盖仓库里的同名文件；浏览器不能直接写本地文件。刷新页面后 `BACKUP_STATE` 才更新。
+- 「还原」把 `__chk.js` 的题库数据恢复到 `wb_literacy_db`；「清空」保留 `parentPwd` 但清掉其余数据。
+- `__chk.js` 必须与 `index.html` 同级（`<script src="__chk.js">` 在页面里加载），**不能移到 `js/` 子目录**。
+
+## 常见任务指引
+
+- **新增小应用**：新建 kebab-case 目录 + `index.html`（自包含），按需建 `assets/`；同步更新 README 项目表、本文目录树和 CHANGELOG。
+- **改题库**：优先改 `__chk.js` 的 `BACKUP_STATE`，或用家长模式保存后覆盖；改 `index.html` 里的 `defaultState()` 只影响“没有检查点文件”时的兜底题库。
+- **改数据结构**：先确认老 localStorage 数据仍能读取（缺字段要补默认值），再改代码，最后更新本文数据表。
+- **验收方式**：浏览器打开页面 → F12 Console 无报错；窄屏（手机尺寸）检查按钮与底部安全区；游戏另需确认 5 张图片加载成功。
+- 仓库没有自动化测试；改动后至少手动走一遍相关主流程。
 
 ## AI 助手行为规则
 
 ### 删除保护
 
 - **禁止删除工作区以外的任何文件**，除非用户明确确认。工作区指本仓库目录 `family-mini-apps/`。
-- 工作区内的文件删除一律**删到回收站**（Windows 下用 PowerShell 的 `Microsoft.VisualBasic.FileSystem` 回收站方式），不要用 `rm`/`rm -rf` 永久删除。
+- 工作区内删除一律**删到回收站**（Windows 下用 PowerShell 的 `Microsoft.VisualBasic.FileSystem` 回收站方式），不要用 `rm` / `rm -rf` 永久删除。
 - `git reset --hard`、`git push --force`、`git clean -fd` 等不可逆操作，执行前必须先向用户确认。
+
+### 数据保护
+
+- 不提交 `literacy-station/__chk.js`（含本地学习数据，`.gitignore` 已忽略）。
+- 不擅自修改用户 localStorage 中已有的数据格式；兼容优先。
+- 导入/导出、清空、覆盖检查点等操作上的二次确认提示不要删。
 
 ### 记录约定
 
-- 每完成一个功能或修复，及时 Git 提交一次，提交信息写清楚改了什么（`git log` 即完整的时间 + 简要记录，不单独维护逐次生成日志）。
-- 重大更新、bug 修复及踩坑教训，记入 `CHANGELOG.md`，格式：日期 + 改动内容 + 教训/注意事项。
+- 完成一个功能或修复后，提醒用户可以提交；**仅在用户明确要求时执行 `git commit`**，且不要自动 `git push`。
+- 提交信息写清楚改了什么（`git log` 即时间 + 简要记录，不单独维护逐次生成日志）。
+- 重大更新、bug 修复与踩坑教训记入 `CHANGELOG.md`，格式：日期 + 改动 + 教训/注意事项。
 
 ## Git 约定
 
-- `.gitignore` 已忽略编辑器/AI 工具目录（`.vscode/`、`.kilo/`、`.mimosa/`、`.claude/`、`.zcode/`）、`node_modules/`、系统临时文件。
-- 提交信息用简短中文或英文描述改动内容即可。
-- 中文内容只在 HTML/JS 内部出现，文件名和目录名一律英文。
+- `.gitignore` 已忽略编辑器/AI 工具目录（`.vscode/`、`.idea/`、`.kilo/`、`.mimosa/`、`.claude/`、`.zcode/`）、`node_modules/`、系统临时文件、`literacy-station/__chk.js`。
+- 提交信息用简短中文或英文描述改动即可。
+- 中文内容只出现在 HTML/JS/文档内部，文件名和目录名一律英文。

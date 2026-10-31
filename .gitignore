@@ -13,6 +13,7 @@ literacy-station/__chk.js
 .mimosa/
 .claude/
 .zcode/
+.trae/
 
 # Node（如果以后加构建工具）
 node_modules/

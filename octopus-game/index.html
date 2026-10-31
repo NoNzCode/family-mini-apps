@@ -98,6 +98,33 @@ function loadImage(key, src) {
   });
 }
 
+// ---- 动画帧资源（每角色 12 帧透明 WebP 序列，由 assets/anim 提供）----
+// 12 帧由单张 AI 图经程序化网格形变派生（.trae/tools/build_anim.py）
+const FRAME_ASSETS = (() => {
+  const types = ['fish', 'shark', 'octopus', 'jellyfish'];
+  const out = {};
+  for (const t of types) {
+    out[t] = Array.from({ length: 12 }, (_, i) => `assets/anim/${t}_f${String(i + 1).padStart(2, '0')}.webp`);
+  }
+  return out;
+})();
+const frameImages = {}; // type -> [img x 12]
+
+function loadFrame(type, idx, src) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => { (frameImages[type] = frameImages[type] || [])[idx] = img; resolve(); };
+    img.onerror = () => { console.error('Failed to load:', src); resolve(); };
+    img.src = src;
+  });
+}
+
+// 12 帧全部加载成功才返回序列，否则回退到静态图
+function getFrames(type) {
+  const arr = frameImages[type];
+  return (arr && arr.length === 12 && arr.every(Boolean)) ? arr : null;
+}
+
 // ---- 游戏状态 ----
 let gameState = {
   score: 0,
@@ -110,11 +137,12 @@ let gameState = {
 // ---- 实体类型定义 ----
 // 速度层级: 鲨鱼(1.0) > 章鱼/水母(0.6) > 鱼群(0.3)
 const SPEED_BASE = 5.0;
+// frameMs: 每帧停留毫秒数；drawScale: 绘制尺寸补偿（归一化画布留白多时放大）
 const ENTITY_TYPES = {
-  shark:     { radius: 100, speed: SPEED_BASE * 1.0, eats: ['octopus','jellyfish','fish'], score: 10, name: '鲨鱼' },
-  octopus:   { radius: 28, speed: SPEED_BASE * 0.6, eats: ['fish'], score: 5, name: '章鱼' },
-  jellyfish: { radius: 30, speed: SPEED_BASE * 0.6, eats: ['fish'], score: 5, name: '水母' },
-  fish:      { radius: 15, speed: SPEED_BASE * 0.3, eats: [], score: 2, name: '小鱼' }
+  shark:     { radius: 100, speed: SPEED_BASE * 1.0, eats: ['octopus','jellyfish','fish'], score: 10, name: '鲨鱼', frameMs: 100, drawScale: 1.0 },
+  octopus:   { radius: 28, speed: SPEED_BASE * 0.6, eats: ['fish'], score: 5, name: '章鱼', frameMs: 140, drawScale: 1.0 },
+  jellyfish: { radius: 30, speed: SPEED_BASE * 0.6, eats: ['fish'], score: 5, name: '水母', frameMs: 160, drawScale: 1.0 },
+  fish:      { radius: 15, speed: SPEED_BASE * 0.3, eats: [], score: 2, name: '小鱼', frameMs: 100, drawScale: 1.0 }
 };
 
 // ---- 实体类 ----
@@ -133,8 +161,12 @@ class Entity {
     this.respawnTimer = 0;
     this.isPlayer = isPlayer;
     this.sprite = images[type];
-    this.imgRatio = (this.sprite && this.sprite.width && this.sprite.height)
-      ? this.sprite.width / this.sprite.height : 1;
+    this.frames = getFrames(type);
+    const refImg = this.frames ? this.frames[0] : this.sprite;
+    this.imgRatio = (refImg && refImg.width && refImg.height)
+      ? refImg.width / refImg.height : 1;
+    // 帧相位随机，避免所有同类实体同步摆动
+    this.animT = Math.random() * 3000;
     this.baseDirection = Math.random() < 0.5 ? 1 : -1;
     this.wanderAngle = (this.baseDirection === 1 ? 0 : Math.PI) + (Math.random() - 0.5) * 0.3;
     // 鱼群方向变化频率大幅降低
@@ -154,6 +186,16 @@ class Entity {
     }
 
     if (this.flashTimer > 0) this.flashTimer -= dt;
+
+    // 帧动画计时：鱼/鲨鱼游得越快摆尾越急；章鱼/水母恒定脉动
+    if (this.frames) {
+      if (this.type === 'octopus' || this.type === 'jellyfish') {
+        this.animT += dt;
+      } else {
+        const spNow = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        this.animT += dt * (0.35 + 0.65 * Math.min(1, spNow / this.speed));
+      }
+    }
 
     if (this.isPlayer) {
       this.updatePlayer();
@@ -327,7 +369,9 @@ class Entity {
   draw() {
     if (!this.isAlive) return;
 
-    const img = this.sprite;
+    const img = this.frames
+      ? this.frames[Math.floor(this.animT / this.config.frameMs) % this.frames.length]
+      : this.sprite;
     if (!img) return;
 
     ctx.save();
@@ -354,7 +398,7 @@ class Entity {
       ctx.shadowBlur = 25;
     }
 
-    const maxW = this.radius * 2.5;
+    const maxW = this.radius * 2.5 * (this.config.drawScale || 1);
     let drawW, drawH;
     if (this.imgRatio > 1) {
       drawW = maxW;
@@ -621,7 +665,9 @@ function gameLoop(now) {
 // ---- 启动 ----
 async function init() {
   const loadPromises = Object.entries(ASSETS).map(([key, src]) => loadImage(key, src));
-  await Promise.all(loadPromises);
+  const framePromises = Object.entries(FRAME_ASSETS)
+    .flatMap(([type, arr]) => arr.map((src, i) => loadFrame(type, i, src)));
+  await Promise.all([...loadPromises, ...framePromises]);
 
   document.getElementById('loading').style.display = 'none';
   document.getElementById('startScreen').style.display = 'flex';
