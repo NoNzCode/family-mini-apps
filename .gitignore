@@ -24,3 +24,5 @@ npm-debug.log*
 *.log
 *.tmp
 ~$*
+# 放置的素材
+.素材
