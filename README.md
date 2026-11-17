@@ -8,7 +8,7 @@
 
 | 项目 | 入口 | 说明 |
 |---|---|---|
-| 海底大冒险（octopus-game） | [octopus-game/index.html](octopus-game/index.html) | Canvas 小游戏：操控**鲨鱼**吃章鱼/水母（+10 分）和小鱼（+2 分），角色带 12 帧游动动画；WASD 或方向键移动，`R` 重开，点击开始界面进入游戏 |
+| 海底大冒险（octopus-game） | [octopus-game/index.html](octopus-game/index.html) | Canvas 成长小游戏：操控**鲨鱼**从幼鲨一路长成成年鲨，吃较小猎物得分/成长，躲开较大危险生物；3 点生命、加速/磁铁/护盾道具、金色鱼高分、最高分记录、循环背景音乐；键盘 WASD/方向键或按住画面拖动，`P`/`Esc` 暂停、`M` 静音、`R` 重开 |
 | 笔记情况台（workbench） | [workbench/index.html](workbench/index.html) | 产出统计（今日/本周/本月/连续打卡）、近 14 天 SVG 折线图、复习计划（逾期标红、一键完成）、素材库（标签/来源/评分/搜索）、JSON 导入导出 |
 | 识字启蒙台（literacy-station） | [literacy-station/index.html](literacy-station/index.html) | 学龄前识字：每日 10 字 3D 翻卡（首次学会 +10 分）、识字练习/组词练习（答对 +5 分）、积分商城；家长模式管理题库与奖励（4 位数字 PIN） |
 
@@ -23,7 +23,7 @@ python -m http.server 8080
 npx serve .
 ```
 
-- **海底大冒险**：桌面浏览器，用键盘操作；需 `octopus-game/assets/` 下 5 张 PNG 存在。
+- **海底大冒险**：桌面/手机浏览器均可；键盘或按住画面拖动操作。需 `octopus-game/assets/` 下角色/背景图与 `anim/` 48 张动画帧存在（背景使用无水印版 `seabed-clean.png`，原 `seabed.png` 保留）。
 - **笔记情况台**：桌面/手机浏览器均可。
 - **识字启蒙台**：桌面/手机浏览器均可；宝宝模式默认进入，家长模式首次进入需设置 4 位密码。
 
@@ -33,7 +33,7 @@ npx serve .
 |---|---|---|
 | workbench | `wb_notes_prod`、`wb_notes_review`、`wb_notes_material`、`wb_notes_seeded` | 产出记录、复习计划、素材、是否已写入示例数据 |
 | literacy-station | `wb_literacy_db` | 字库与 `learned` 状态、积分、兑换记录、家长 PIN、奖励配置 |
-| octopus-game | 无 | 不持久化，刷新即重开 |
+| octopus-game | `octopus_best_score`、`octopus_settings` | 最高分；静音与减少动效设置（`{muted,reducedMotion}`），损坏时自动回退默认值 |
 
 - 工作台和识字台都提供 JSON 导出/导入，换浏览器或清缓存前请先导出备份。
 - 识字台的题库检查点保存在 [literacy-station/__chk.js](literacy-station/__chk.js)：家长模式点「保存」会生成并下载新的 `__chk.js`（需手动覆盖仓库里的同名文件），点「还原」从该文件恢复。该文件是**本地数据快照**，已在 `.gitignore` 中忽略，不会被提交；刚克隆的仓库没有它时，页面使用内置默认题库。
@@ -44,7 +44,7 @@ npx serve .
 family-mini-apps/
 ├── octopus-game/        # 海底大冒险（Canvas 游戏）
 │   ├── index.html
-│   ├── assets/          # 角色/背景原图 + anim/ 每角色 12 帧动画序列
+│   ├── assets/          # 角色/背景原图 + seabed-clean.png 无水印背景 + anim/ 每角色 12 帧动画序列
 │   └── css/ js/         # 预留占位（.gitkeep）
 ├── workbench/           # 笔记情况台
 │   ├── index.html

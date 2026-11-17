@@ -16,7 +16,7 @@
 family-mini-apps/
 ├── octopus-game/        # 海底大冒险（Canvas 游戏）
 │   ├── index.html
-│   ├── assets/          # 5 张角色/背景原图 + anim/ 每角色 3 帧动画序列
+│   ├── assets/          # 角色/背景原图 + seabed-clean.png 无水印背景 + anim/ 每角色 12 帧动画序列
 │   └── css/ js/         # 预留空目录（.gitkeep）
 ├── workbench/           # 笔记情况台
 │   ├── index.html
@@ -41,7 +41,8 @@ family-mini-apps/
 | workbench | `wb_notes_material` | 素材 `{id,content,tag,source,rating,addedAt}` |
 | workbench | `wb_notes_seeded` | 是否已写入示例数据（`seed()` 只执行一次） |
 | literacy-station | `wb_literacy_db` | 完整状态，见下 |
-| octopus-game | 无 | 纯内存，刷新即重开 |
+| octopus-game | `octopus_best_score` | 最高分（整数字符串） |
+| octopus-game | `octopus_settings` | `{muted:boolean,reducedMotion:boolean}`；读取时校验类型，损坏回退默认 |
 
 `wb_literacy_db` 结构：
 
@@ -64,13 +65,15 @@ family-mini-apps/
 
 ### octopus-game/（海底大冒险）
 
-- 玩家操控的是**鲨鱼**，不是章鱼：`WASD` / 方向键移动，`R` 重开，点击开始遮罩开始游戏。
-- 实体与得分（`ENTITY_TYPES`）：鲨鱼吃章鱼/水母 +10，吃小鱼 +2；章鱼/水母会吃小鱼但不计分；鲨鱼体型（radius 100）远大于其他实体。
+- 玩家操控的是**鲨鱼**，不是章鱼。三阶段成长：幼鲨 radius 40 → 少年鲨 65 → 成年鲨 95；成长需求 6/10/14，普通猎物 +1 成长。可吃阈值：猎物 radius ≤ 玩家×0.9；危险阈值：≥ 玩家×1.15；中间为中立（不受伤也不得分）。
+- 得分（`BASE_SCORE`）：小鱼 +2、章鱼/水母 +5；金色鱼（`gold`）得分×5。3 点生命，受伤保护 2s，出生保护 1s；危险来自体型较大的章鱼/水母/鱼，**无追击型大鲨鱼**。生命归零失败，成年鲨成长满通关。
+- 道具泡：加速/磁铁 8s、护盾挡一次；场上最多 2 个。NPC 出生避开玩家中心安全区，防止开局/重开瞬间掉命或白送成长。
 - **帧动画**：`assets/anim/` 下每角色 12 张透明 WebP 序列帧（`{type}_f01~f12.webp`），由**单张 AI 基础图经程序化网格形变派生**（脚本 `.trae/tools/build_anim.py`，输入 `assets/anim/src/{type}_base.jpg` 绿幕单帧图，抠绿幕 → bbox 裁剪 → pad 13% 最长边+16px → 网格位移形变 → 高 400px WebP）。由 `FRAME_ASSETS` 声明、`getFrames()` 校验（12 帧全成功才启用，否则回退 `assets/` 静态图）。节奏由 `ENTITY_TYPES.frameMs` 控制（fish 100 / shark 100 / octopus 140 / jellyfish 160）；鱼/鲨鱼摆尾速度随游速缩放，章鱼/水母恒定脉动；帧相位随机防止同类实体同步。
 - 12 帧形变方案：鱼/鲨鱼尾部纵向位移波（摆幅 7.5%/5.5% 高），章鱼触手横向摆动+整体浮动，水母伞盖 ±8% 缩放+触手摆动；相位 `k/12` 首尾无缝循环。
 - 帧的生成/切分流程见 `CHANGELOG.md` 2026-10-29 两条目；`assets/anim/src/{type}_base.jpg` 是单张基础图，保留以便重生成。
-- Canvas 随窗口 `resize` 重算尺寸；`assets/` 5 张原图仍作为背景与回退资源，删除前确认 `anim/` 帧齐全。
-- **只有键盘输入，没有触控/虚拟摇杆**，移动端无法游玩；若要移动端适配需新增加触控层（目前未做）。
+- 输入：键盘 WASD/方向键；Pointer Events 按住画面拖动跟随（鼠标/触控均可）。`P`/`Esc` 暂停，`M` 静音，`R` 重开；`visibilitychange` 后台自动暂停，`blur` 清空按键/指针。
+- 渲染：秒制 dt（上限 0.033），DPR≤2，离屏背景/光束缓存；`resize` 重算画布但保留游戏状态。角色**不画落地阴影**；背景用 `assets/seabed-clean.png`（无水印），原 `seabed.png` 保留；`assets/` 静态图仍作回退，删除前确认 `anim/` 帧齐全。
+- 持久化：`octopus_best_score`、`octopus_settings`（见数据表）；Web Audio 本地合成音效与**循环背景音乐**（`setMusicPlaying` 随开始/暂停/结算/静音联动），无外部音频文件。
 
 ### workbench/（笔记情况台）
 
@@ -103,7 +106,7 @@ family-mini-apps/
 - **新增小应用**：新建 kebab-case 目录 + `index.html`（自包含），按需建 `assets/`；同步更新 README 项目表、本文目录树和 CHANGELOG。
 - **改题库**：优先改 `__chk.js` 的 `BACKUP_STATE`，或用家长模式保存后覆盖；改 `index.html` 里的 `defaultState()` 只影响“没有检查点文件”时的兜底题库。
 - **改数据结构**：先确认老 localStorage 数据仍能读取（缺字段要补默认值），再改代码，最后更新本文数据表。
-- **验收方式**：浏览器打开页面 → F12 Console 无报错；窄屏（手机尺寸）检查按钮与底部安全区；游戏另需确认 5 张图片加载成功。
+- **验收方式**：浏览器打开页面 → F12 Console 无报错；窄屏（手机尺寸）检查按钮与底部安全区；游戏另需确认背景、4 张静态角色图与 48 张动画帧加载成功，并走一遍成长/受伤/通关/重开主流程。
 - 仓库没有自动化测试；改动后至少手动走一遍相关主流程。
 
 ## AI 助手行为规则
