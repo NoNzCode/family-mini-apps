@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>轻集 · 家庭应用与小工具</title>
+<meta name="description" content="家庭轻应用作品集与一组浏览器内可用的小工具：番茄钟、字数统计、调色板生成器。纯前端、离线可用。" />
+<style>
+  :root{
+    --paper:#F6F2E9;
+    --paper-2:#EFE9DC;
+    --card:#FFFFFF;
+    --ink:#1C2628;
+    --ink-2:#3A4649;
+    --muted:#7A8285;
+    --line:#E6DFCF;
+    --accent:#2F8B72;       /* 清新青绿 */
+    --accent-ink:#1E6350;
+    --accent-soft:#D7ECE4;
+    --coral:#E07A5F;        /* 暖珊瑚点缀 */
+    --coral-soft:#F7E2DA;
+    --gold:#C9A24B;
+    --radius:18px;
+    --radius-sm:12px;
+    --shadow:0 1px 2px rgba(28,38,40,.04), 0 12px 32px -18px rgba(28,38,40,.25);
+    --shadow-hover:0 2px 4px rgba(28,38,40,.05), 0 24px 48px -22px rgba(28,38,40,.35);
+    --serif:Georgia,"Songti SC","STSong","SimSun",serif;
+    --sans:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --ease:cubic-bezier(.22,.61,.36,1);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:var(--sans);
+    color:var(--ink);
+    background:var(--paper);
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  /* 纸纹颗粒 */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:1;opacity:.5;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.11  0 0 0 0 0.15  0 0 0 0 0.16  0 0 0 .06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    mix-blend-mode:multiply;
+  }
+
+  a{color:inherit;text-decoration:none}
+  img{max-width:100%;display:block}
+
+  .wrap{max-width:1140px;margin:0 auto;padding:0 28px;position:relative;z-index:2}
+
+  /* ---------- 顶部导航 ---------- */
+  header.nav{
+    position:sticky;top:0;z-index:50;
+    backdrop-filter:saturate(140%) blur(10px);
+    background:rgba(246,242,233,.78);
+    border-bottom:1px solid transparent;
+    transition:border-color .3s var(--ease), background .3s var(--ease);
+  }
+  header.nav.scrolled{border-bottom-color:var(--line);background:rgba(246,242,233,.92)}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:68px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--serif);font-size:20px;font-weight:700;letter-spacing:.5px}
+  .brand-mark{
+    width:30px;height:30px;border-radius:9px;
+    background:linear-gradient(135deg,var(--accent),#5BB89A);
+    display:grid;place-items:center;color:#fff;font-family:var(--serif);font-size:17px;
+    box-shadow:inset 0 -2px 0 rgba(0,0,0,.12), 0 4px 10px -4px rgba(47,139,114,.6);
+  }
+  .nav-links{display:flex;gap:6px;align-items:center}
+  .nav-links a{
+    padding:8px 14px;border-radius:999px;font-size:14px;color:var(--ink-2);
+    transition:background .25s var(--ease),color .25s var(--ease);
+  }
+  .nav-links a:hover{background:var(--paper-2);color:var(--ink)}
+  .nav-cta{
+    background:var(--ink);color:#fff !important;padding:9px 18px !important;border-radius:999px;
+    font-size:14px;margin-left:6px;transition:transform .2s var(--ease), background .25s var(--ease);
+  }
+  .nav-cta:hover{background:var(--accent-ink) !important;transform:translateY(-1px)}
+  @media(max-width:640px){.nav-links a:not(.nav-cta){display:none}}
+
+  /* ---------- Hero ---------- */
+  .hero{position:relative;padding:120px 0 110px;overflow:hidden}
+  .hero-blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;pointer-events:none;z-index:0}
+  .blob-a{width:520px;height:520px;background:radial-gradient(circle,var(--accent-soft),transparent 70%);top:-160px;right:-120px}
+  .blob-b{width:460px;height:460px;background:radial-gradient(circle,var(--coral-soft),transparent 70%);bottom:-180px;left:-140px}
+  .hero-grid{
+    position:absolute;inset:0;z-index:0;opacity:.5;pointer-events:none;
+    background-image:
+      linear-gradient(var(--line) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:64px 64px;
+    -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 40%,#000 30%,transparent 75%);
+            mask-image:radial-gradient(ellipse 80% 60% at 50% 40%,#000 30%,transparent 75%);
+  }
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;font-size:12.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--accent-ink);font-weight:600;
+    padding:6px 14px;border:1px solid var(--accent-soft);border-radius:999px;background:rgba(255,255,255,.55);
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--accent-soft);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .hero h1{
+    font-family:var(--serif);font-weight:700;line-height:1.04;
+    font-size:clamp(44px,7.2vw,92px);letter-spacing:-.02em;margin:26px 0 0;
+  }
+  .hero h1 em{font-style:italic;color:var(--accent-ink);position:relative}
+  .hero h1 em::after{
+    content:"";position:absolute;left:2%;right:2%;bottom:.08em;height:.14em;
+    background:var(--coral);opacity:.85;border-radius:2px;z-index:-1;
+    transform:skewX(-8deg);
+  }
+  .hero .lede{font-size:clamp(17px,2vw,21px);color:var(--ink-2);max-width:620px;margin:28px 0 0;line-height:1.7}
+  .hero-actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:40px}
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;padding:14px 26px;border-radius:999px;
+    font-size:15px;font-weight:600;cursor:pointer;border:1px solid transparent;
+    transition:transform .2s var(--ease),box-shadow .25s var(--ease),background .25s var(--ease);
+  }
+  .btn-primary{background:var(--ink);color:#fff;box-shadow:0 10px 24px -10px rgba(28,38,40,.6)}
+  .btn-primary:hover{background:var(--accent-ink);transform:translateY(-2px);box-shadow:0 16px 30px -12px rgba(30,99,80,.6)}
+  .btn-ghost{background:rgba(255,255,255,.6);color:var(--ink);border-color:var(--line)}
+  .btn-ghost:hover{background:#fff;border-color:var(--accent);transform:translateY(-2px)}
+  .hero-stats{display:flex;gap:44px;margin-top:64px;flex-wrap:wrap}
+  .stat .num{font-family:var(--serif);font-size:38px;font-weight:700;color:var(--ink);line-height:1}
+  .stat .num span{color:var(--accent)}
+  .stat .lbl{font-size:13px;color:var(--muted);margin-top:8px;letter-spacing:.04em}
+
+  /* ---------- 通用区块 ---------- */
+  section{padding:96px 0;position:relative;z-index:2}
+  .section-head{max-width:720px;margin-bottom:52px}
+  .section-tag{font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-ink);font-weight:700}
+  .section-title{font-family:var(--serif);font-size:clamp(32px,4.4vw,52px);line-height:1.1;letter-spacing:-.01em;margin:14px 0 16px;font-weight:700}
+  .section-sub{color:var(--muted);font-size:17px;max-width:560px}
+
+  /* 滚动渐入 */
+  .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* ---------- 作品集 ---------- */
+  .portfolio{background:linear-gradient(180deg,transparent,var(--paper-2) 30%,var(--paper-2) 70%,transparent)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:30px;box-shadow:var(--shadow);transition:transform .35s var(--ease),box-shadow .35s var(--ease),border-color .35s var(--ease);
+    position:relative;overflow:hidden;
+  }
+  .card::before{
+    content:"";position:absolute;left:0;top:0;height:3px;width:100%;
+    background:linear-gradient(90deg,var(--accent),var(--gold));transform:scaleX(0);transform-origin:left;
+    transition:transform .4s var(--ease);
+  }
+  .card:hover{transform:translateY(-6px);box-shadow:var(--shadow-hover);border-color:transparent}
+  .card:hover::before{transform:scaleX(1)}
+  .card-ic{width:54px;height:54px;border-radius:15px;display:grid;place-items:center;margin-bottom:20px}
+  .card-ic svg{width:30px;height:30px}
+  .card h3{font-family:var(--serif);font-size:24px;margin:0 0 4px;font-weight:700}
+  .card .en{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .card p{color:var(--ink-2);font-size:14.5px;margin:0 0 18px;line-height:1.7}
+  .tags{display:flex;flex-wrap:wrap;gap:6px}
+  .tag{font-size:11.5px;padding:4px 10px;border-radius:999px;background:var(--paper-2);color:var(--ink-2);border:1px solid var(--line)}
+  .card .arrow{position:absolute;right:26px;bottom:26px;color:var(--muted);transition:transform .3s var(--ease),color .3s var(--ease)}
+  .card:hover .arrow{transform:translate(4px,-4px);color:var(--accent)}
+
+  /* ---------- 小工具 ---------- */
+  .tools-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:24px}
+  @media(max-width:880px){.tools-grid{grid-template-columns:1fr}}
+  .tool{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:28px;box-shadow:var(--shadow);
+  }
+  .tool-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:12px;flex-wrap:wrap}
+  .tool-title{display:flex;align-items:center;gap:11px}
+  .tool-title .dot-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:#fff}
+  .tool-title h3{font-family:var(--serif);font-size:21px;margin:0;font-weight:700}
+  .tool-title p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+
+  /* 番茄钟 */
+  .pomo{display:flex;flex-direction:column;align-items:center;gap:22px}
+  .pomo-modes{display:flex;gap:6px;background:var(--paper-2);padding:5px;border-radius:999px}
+  .pomo-modes button{
+    border:none;background:transparent;padding:7px 16px;border-radius:999px;font-size:13px;
+    cursor:pointer;color:var(--ink-2);transition:all .25s var(--ease);font-family:var(--sans);
+  }
+  .pomo-modes button.active{background:#fff;color:var(--accent-ink);font-weight:600;box-shadow:0 2px 8px -3px rgba(0,0,0,.15)}
+  .ring{position:relative;width:220px;height:220px}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .track{stroke:var(--paper-2)}
+  .ring .prog{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+  .ring.break .prog{stroke:var(--coral)}
+  .ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ring-time{font-family:var(--serif);font-size:52px;font-weight:700;letter-spacing:-.02em;line-height:1}
+  .ring-session{font-size:12px;color:var(--muted);margin-top:6px;letter-spacing:.08em}
+  .pomo-ctrl{display:flex;gap:10px}
+  .icon-btn{
+    width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:#fff;
+    cursor:pointer;display:grid;place-items:center;color:var(--ink);transition:all .2s var(--ease);
+  }
+  .icon-btn:hover{border-color:var(--accent);color:var(--accent-ink);transform:translateY(-2px)}
+  .icon-btn.play{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .icon-btn.play:hover{background:var(--accent-ink);color:#fff}
+
+  /* 字数统计 */
+  .counter textarea{
+    width:100%;min-height:170px;resize:vertical;border:1px solid var(--line);border-radius:var(--radius-sm);
+    padding:16px;font-family:var(--sans);font-size:14px;color:var(--ink);background:var(--paper);
+    outline:none;transition:border-color .2s var(--ease),box-shadow .2s var(--ease);line-height:1.6;
+  }
+  .counter textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft);background:#fff}
+  .counts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}
+  .count{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .count .v{font-family:var(--serif);font-size:24px;font-weight:700;color:var(--accent-ink);line-height:1.1}
+  .count .l{font-size:11.5px;color:var(--muted);margin-top:4px}
+
+  /* 调色板 */
+  .palette-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;height:140px;border-radius:var(--radius-sm);overflow:hidden}
+  .swatch{cursor:pointer;position:relative;display:flex;align-items:flex-end;padding:10px;transition:transform .25s var(--ease);min-height:0}
+  .swatch:hover{transform:scaleY(1.04);transform-origin:bottom}
+  .swatch .hex{font-size:11.5px;font-weight:700;color:#fff;mix-blend-mode:difference;letter-spacing:.04em}
+  .swatch.copied::after{
+    content:"已复制";position:absolute;top:8px;left:50%;transform:translateX(-50%);
+    background:rgba(0,0,0,.6);color:#fff;font-size:10px;padding:3px 8px;border-radius:6px;
+  }
+  .palette-actions{display:flex;justify-content:space-between;align-items:center;margin-top:16px;gap:10px;flex-wrap:wrap}
+  .palette-list{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+  .chip{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer}
+  .chip .chip-box{width:100%;height:26px;border-radius:7px;border:1px solid var(--line)}
+
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  @media(max-width:680px){.row-2{grid-template-columns:1fr}}
+
+  /* ---------- 关于 ---------- */
+  .about{background:var(--ink);color:#E9E4D8}
+  .about .section-tag{color:#9FD4C0}
+  .about .section-title{color:#fff}
+  .about-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:48px;align-items:start}
+  @media(max-width:780px){.about-grid{grid-template-columns:1fr;gap:32px}}
+  .about p{color:#BDB7A6;font-size:16px;line-height:1.85}
+  .about p strong{color:#fff;font-weight:600}
+  .feat-list{list-style:none;padding:0;margin:0;display:grid;gap:14px}
+  .feat-list li{display:flex;gap:12px;align-items:flex-start;color:#C9C2AE;font-size:14px}
+  .feat-list svg{flex:0 0 auto;margin-top:2px;color:#7FD0B3}
+
+  footer{background:var(--ink);color:#8A8472;border-top:1px solid rgba(255,255,255,.06);padding:28px 0}
+  .foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;font-size:13px}
+
+  /* toast */
+  .toast{
+    position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);
+    background:var(--ink);color:#fff;padding:11px 20px;border-radius:999px;font-size:13.5px;
+    opacity:0;pointer-events:none;transition:opacity .3s var(--ease),transform .3s var(--ease);z-index:100;
+    box-shadow:0 12px 30px -10px rgba(0,0,0,.5);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none !important;transition:none !important}
+    .reveal{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top"><span class="brand-mark">轻</span><span>轻集 QingJi</span></a>
+    <nav class="nav-links">
+      <a href="#work">作品集</a>
+      <a href="#tools">小工具</a>
+      <a href="#about">关于</a>
+      <a class="nav-cta" href="#tools">开始使用</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-grid"></div>
+    <div class="hero-blob blob-a"></div>
+    <div class="hero-blob blob-b"></div>
+    <div class="wrap">
+      <span class="eyebrow reveal"><span class="dot"></span>Family · Mini · Studio</span>
+      <h1 class="reveal">给家人做的<br>一些<em>轻应用</em>与小工具</h1>
+      <p class="lede reveal">一个纯前端的小站：没有登录、没有服务器、没有追踪。打开就能用，关掉数据留在你自己的浏览器里。</p>
+      <div class="hero-actions reveal">
+        <a class="btn btn-primary" href="#tools">试试小工具
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="#work">浏览作品集</a>
+      </div>
+      <div class="hero-stats reveal">
+        <div class="stat"><div class="num">3<span>+</span></div><div class="lbl">家庭应用作品</div></div>
+        <div class="stat"><div class="num">3</div><div class="lbl">在线小工具</div></div>
+        <div class="stat"><div class="num">0<span>kb</span></div><div class="lbl">外部依赖 · 离线可用</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 作品集 -->
+  <section class="portfolio" id="work">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="section-tag">Portfolio</div>
+        <h2 class="section-title">三个给家人用的小作品</h2>
+        <p class="section-sub">都是单文件 HTML，数据存在本地 localStorage，可导出导入。不联网、不上传，家人用着放心。</p>
+      </div>
+      <div class="cards">
+        <article class="card reveal">
+          <div class="card-ic" style="background:var(--accent-soft)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c2-3 5-4 8-4 2.5 0 4.5 1 7 1-1.5 1.5-2 3-2 5 0 2 1 3 2 4-3.5-1-6-1-9 0-3 1-6 0-8-3-1.2-1.5-1.2-2 0-3z"/><circle cx="14.5" cy="10.5" r="1" fill="var(--accent-ink)"/></svg>
+          </div>
+          <h3>海底大冒险</h3>
+          <div class="en">Octopus Game</div>
+          <p>操控小鲨鱼在海底成长：吃小鱼长大、躲开更大的危险生物。三阶段成长、12 帧序列动画、Web Audio 本地合成音效与背景音乐。</p>
+          <div class="tags"><span class="tag">Canvas</span><span class="tag">Web Audio</span><span class="tag">帧动画</span><span class="tag">游戏</span></div>
+          <span class="arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
+        </article>
+
+        <article class="card reveal">
+          <div class="card-ic" style="background:var(--coral-soft)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--coral)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M9 9h7M9 13h7M9 17h4"/></svg>
+          </div>
+          <h3>笔记情况台</h3>
+          <div class="en">Workbench</div>
+          <p>每日产出统计、艾宾浩斯式复习计划、素材库三位一体。近 14 天 SVG 折线图、连续打卡计数，数据全部本地保存可备份导出。</p>
+          <div class="tags"><span class="tag">数据可视化</span><span class="tag">本地存储</span><span class="tag">效率</span></div>
+          <span class="arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
+        </article>
+
+        <article class="card reveal">
+          <div class="card-ic" style="background:#F0E7C8">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2z"/><path d="M9 2v6h6"/><text x="12" y="17" text-anchor="middle" font-size="9" font-weight="700" fill="var(--gold)" stroke="none" font-family="Georgia,serif">字</text></svg>
+          </div>
+          <h3>识字启蒙台</h3>
+          <div class="en">Literacy Station</div>
+          <p>为学龄前宝宝设计：3D 翻转识字卡、识字与组词练习、每日任务、积分兑换商城。宝宝模式与家长模式分离，题库可保存检查点。</p>
+          <div class="tags"><span class="tag">教育</span><span class="tag">儿童</span><span class="tag">练习</span></div>
+          <span class="arrow"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M7 7h10v10"/></svg></span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- 小工具 -->
+  <section id="tools">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <div class="section-tag">Mini Tools</div>
+        <h2 class="section-title">随手可用的小工具</h2>
+        <p class="section-sub">全部在浏览器本地运行，不发送任何数据。点一下就能开始。</p>
+      </div>
+
+      <div class="tools-grid">
+        <!-- 番茄钟 -->
+        <div class="tool reveal">
+          <div class="tool-head">
+            <div class="tool-title">
+              <span class="dot-ic" style="background:linear-gradient(135deg,var(--accent),#5BB89A)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>
+              </span>
+              <div><h3>番茄钟</h3><p>专注 25 分钟 · 休息 5 分钟</p></div>
+            </div>
+          </div>
+          <div class="pomo">
+            <div class="pomo-modes">
+              <button class="active" data-mode="focus">专注</button>
+              <button data-mode="break">休息</button>
+            </div>
+            <div class="ring" id="ring">
+              <svg width="220" height="220" viewBox="0 0 220 220">
+                <circle class="track" cx="110" cy="110" r="96" fill="none" stroke-width="10"/>
+                <circle class="prog" id="prog" cx="110" cy="110" r="96" fill="none" stroke-width="10" stroke-dasharray="603.2" stroke-dashoffset="0"/>
+              </svg>
+              <div class="ring-center">
+                <div class="ring-time" id="ringTime">25:00</div>
+                <div class="ring-session" id="ringSession">第 1 轮</div>
+              </div>
+            </div>
+            <div class="pomo-ctrl">
+              <button class="icon-btn" id="pomoReset" title="重置">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+              </button>
+              <button class="icon-btn play" id="pomoPlay" title="开始">
+                <svg id="playIco" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 字数统计 -->
+        <div class="tool counter reveal">
+          <div class="tool-head">
+            <div class="tool-title">
+              <span class="dot-ic" style="background:linear-gradient(135deg,var(--coral),#EFA18B)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/></svg>
+              </span>
+              <div><h3>字数统计</h3><p>粘贴文本，实时统计</p></div>
+            </div>
+          </div>
+          <textarea id="textIn" placeholder="在这里粘贴或输入文字…" spellcheck="false"></textarea>
+          <div class="counts" id="counts">
+            <div class="count"><div class="v" id="cChars">0</div><div class="l">总字符</div></div>
+            <div class="count"><div class="v" id="cCharsNs">0</div><div class="l">不含空格</div></div>
+            <div class="count"><div class="v" id="cCjk">0</div><div class="l">中文汉字</div></div>
+            <div class="count"><div class="v" id="cWords">0</div><div class="l">英文单词</div></div>
+            <div class="count"><div class="v" id="cLines">0</div><div class="l">行数</div></div>
+            <div class="count"><div class="v" id="cRead">0</div><div class="l">约读分钟</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 调色板 -->
+      <div class="tool reveal" style="margin-top:24px">
+        <div class="tool-head">
+          <div class="tool-title">
+            <span class="dot-ic" style="background:linear-gradient(135deg,var(--gold),#E0C078)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="1.5"/><circle cx="17.5" cy="10.5" r="1.5"/><circle cx="8.5" cy="7.5" r="1.5"/><circle cx="6.5" cy="12.5" r="1.5"/><path d="M12 2a10 10 0 0 0 0 20c1.5 0 2-1 2-2 0-1.5-1-2-1-3 0-.8.7-1.5 1.5-1.5H17a5 5 0 0 0 5-5c0-5-4.5-8.5-10-8.5z"/></svg>
+            </span>
+            <div><h3>调色板生成器</h3><p>随机生成和谐五色 · 点击复制色值</p></div>
+          </div>
+          <button class="btn btn-primary" id="genPalette" style="padding:10px 20px;font-size:13.5px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+            换一组
+          </button>
+        </div>
+        <div class="palette-bar reveal" id="paletteBar"></div>
+        <div class="palette-list reveal" id="paletteList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 关于 -->
+  <section class="about" id="about">
+    <div class="wrap">
+      <div class="about-grid">
+        <div class="reveal">
+          <div class="section-tag">About</div>
+          <h2 class="section-title">为什么做这些小东西？</h2>
+          <p>家里有学龄前的小朋友，也有想记录日常产出的大人。市面上的应用要么广告太多、要么要注册、要么把数据传到远方。</p>
+          <p>于是干脆自己写：<strong>单文件、零依赖、数据留在本地</strong>。游戏能离线玩，笔记能导出备份，识字题库能自己增删。这个小站把它们整理到一起，再放几个随手会用到的小工具。</p>
+        </div>
+        <div class="reveal">
+          <ul class="feat-list">
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>纯 HTML / CSS / JS，无构建、无框架、无 CDN</li>
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>数据存 localStorage，支持 JSON 导出导入</li>
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>断网也能打开，手机浏览器即用</li>
+            <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>不收集、不上传任何个人信息</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span>© <span id="year"></span> 轻集 QingJi · 家庭轻应用集</span>
+    <span>Made with care · 纯前端 · 本地优先</span>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+  const $ = (s,el=document)=>el.querySelector(s);
+  const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+
+  /* 年份 */
+  $("#year").textContent = new Date().getFullYear();
+
+  /* 导航滚动样式 */
+  const nav = $("#nav");
+  const onScroll = ()=> nav.classList.toggle("scrolled", window.scrollY > 8);
+  window.addEventListener("scroll", onScroll, {passive:true}); onScroll();
+
+  /* 滚动渐入 */
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach((e,i)=>{
+      if(e.isIntersecting){
+        e.target.classList.add("in");
+        io.unobserve(e.target);
+      }
+    });
+  }, {threshold:.12, rootMargin:"0px 0px -40px 0px"});
+  $$(".reveal").forEach((el,i)=>{ el.style.transitionDelay = Math.min((i%4)*70, 210)+"ms"; io.observe(el); });
+
+  /* Toast */
+  let toastTimer;
+  function toast(msg){
+    const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), 1600);
+  }
+  function copy(text){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      return navigator.clipboard.writeText(text);
+    }
+    const ta = document.createElement("textarea"); ta.value = text; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); }catch(_){}
+    document.body.removeChild(ta); return Promise.resolve();
+  }
+
+  /* ============ 番茄钟 ============ */
+  const DUR = {focus:25*60, break:5*60};
+  const R = 96, CIRC = 2*Math.PI*R; // ≈603.2
+  const ringEl = $("#ring");
+  const progEl = $("#prog");
+  const timeEl = $("#ringTime");
+  const sessEl = $("#ringSession");
+  const playBtn = $("#pomoPlay");
+  const playIco = $("#playIco");
+  let mode = "focus", remain = DUR.focus, total = DUR.focus, timer=null, running=false, session=1;
+
+  function fmt(s){ const m=Math.floor(s/60), ss=s%60; return String(m).padStart(2,"0")+":"+String(ss).padStart(2,"0"); }
+  function render(){
+    timeEl.textContent = fmt(remain);
+    const off = CIRC * (1 - remain/total);
+    progEl.style.strokeDashoffset = off;
+    ringEl.classList.toggle("break", mode==="break");
+    sessEl.textContent = "第 "+session+" 轮 · "+(mode==="focus"?"专注中":"休息中");
+  }
+  function setMode(m){
+    mode = m; total = DUR[m]; remain = total; running = false; stop();
+    $$(".pomo-modes button").forEach(b=>b.classList.toggle("active", b.dataset.mode===m));
+    playIco.innerHTML = '<path d="M8 5v14l11-7z"/>';
+    render();
+  }
+  function beep(){
+    try{
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      [0,.18].forEach((d,i)=>{
+        const o=ctx.createOscillator(), g=ctx.createGain();
+        o.type="sine"; o.frequency.value = i?880:660;
+        g.gain.setValueAtTime(.0001, ctx.currentTime+d);
+        g.gain.exponentialRampToValueAtTime(.25, ctx.currentTime+d+.02);
+        g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime+d+.25);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(ctx.currentTime+d); o.stop(ctx.currentTime+d+.3);
+      });
+      setTimeout(()=>ctx.close(), 1200);
+    }catch(_){}
+  }
+  function tick(){
+    remain--;
+    if(remain <= 0){
+      stop(); beep();
+      if(mode==="focus"){ session++; setMode("break"); }
+      else { setMode("focus"); }
+      return;
+    }
+    render();
+  }
+  function start(){ if(running) return; running=true; timer=setInterval(tick,1000); playIco.innerHTML='<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>'; }
+  function stop(){ running=false; clearInterval(timer); playIco.innerHTML='<path d="M8 5v14l11-7z"/>'; }
+  playBtn.addEventListener("click", ()=> running ? stop() : start());
+  $("#pomoReset").addEventListener("click", ()=>{ remain = total; render(); toast("已重置"); });
+  $$(".pomo-modes button").forEach(b=> b.addEventListener("click", ()=> setMode(b.dataset.mode)));
+  render();
+
+  /* ============ 字数统计 ============ */
+  const textIn = $("#textIn");
+  function updateCount(){
+    const v = textIn.value;
+    const chars = v.length;
+    const charsNs = v.replace(/\s/g,"").length;
+    const cjk = (v.match(/[\u4e00-\u9fff]/g)||[]).length;
+    const words = (v.match(/[A-Za-z0-9]+/g)||[]).length;
+    const lines = v.length===0 ? 0 : v.split("\n").length;
+    const readMin = Math.max(0, Math.round((cjk/400 + words/200)*10)/10);
+    $("#cChars").textContent = chars;
+    $("#cCharsNs").textContent = charsNs;
+    $("#cCjk").textContent = cjk;
+    $("#cWords").textContent = words;
+    $("#cLines").textContent = lines;
+    $("#cRead").textContent = readMin;
+  }
+  textIn.addEventListener("input", updateCount); updateCount();
+
+  /* ============ 调色板 ============ */
+  function hslToHex(h,s,l){
+    s/=100; l/=100;
+    const k = n => (n + h/30) % 12;
+    const a = s * Math.min(l, 1-l);
+    const f = n => {
+      const color = l - a * Math.max(-1, Math.min(k(n)-3, Math.min(9-k(n),1)));
+      return Math.round(255*color).toString(16).padStart(2,"0");
+    };
+    return ("#"+f(0)+f(8)+f(4)).toUpperCase();
+  }
+  function genPalette(){
+    const base = Math.floor(Math.random()*360);
+    const hues = [base, (base+30)%360, (base+60)%360, (base+180)%360, (base+210)%360]; // 邻近 + 互补
+    const sats = [55,60,50,65,60];
+    const ligs = [58,64,50,55,68];
+    const colors = hues.map((h,i)=> hslToHex(h, sats[i], ligs[i]));
+    const bar = $("#paletteBar"); bar.innerHTML = "";
+    const list = $("#paletteList"); list.innerHTML = "";
+    colors.forEach(hex=>{
+      const sw = document.createElement("div"); sw.className="swatch"; sw.style.background=hex;
+      sw.innerHTML = '<span class="hex">'+hex+'</span>';
+      sw.addEventListener("click", ()=>{ copy(hex).then(()=>{ sw.classList.add("copied"); toast("已复制 "+hex); setTimeout(()=>sw.classList.remove("copied"),1200); }); });
+      bar.appendChild(sw);
+
+      const chip = document.createElement("div"); chip.className="chip";
+      chip.innerHTML = '<span class="chip-box" style="background:'+hex+'"></span><span>'+hex+'</span>';
+      chip.addEventListener("click", ()=>{ copy(hex).then(()=>toast("已复制 "+hex)); });
+      list.appendChild(chip);
+    });
+  }
+  $("#genPalette").addEventListener("click", genPalette);
+  genPalette();
+})();
+</script>
+</body>
+</html>

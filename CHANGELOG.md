@@ -2,6 +2,20 @@
 
 > 记录重大更新、bug 修复与踩坑教训。新条目加在最上面，格式：日期 + 改动 + 教训。
 
+## 2026-11-18 新增 portfolio-tools 作品集 + 小工具站并公开部署
+
+**改动：**
+
+- 新增 `portfolio-tools/`：编辑式极简风格单页站，作品集区以卡片展示三个家庭应用（海底大冒险 / 笔记情况台 / 识字启蒙台），小工具区提供三个浏览器内工具——番茄钟、字数统计、调色板生成器，全部纯内存态、不写 localStorage。
+- 通过部署插件以 StaticWeb 类型将该站**公开上线**：访问 https://37kivaherdcil3ngep5.traesite.cn ，Site ID `37kivaherdcil3ngep5`，首次部署 `dep_6afdc594f52e5fcd0b8d67cb`。
+- 同步更新 README 项目表与目录树、AGENTS 目录树与项目说明。
+
+**教训/注意：**
+
+- 提交 git 前扫描确认：仓库内无硬编码密钥、预签名 URL 或私钥；唯一 `type="password"` 命中是识字台家长 PIN 的输入框 UI，真实密码由用户设置后存 localStorage，非硬编码。
+- 部署截图的预签名 URL 只出现在 CLI 输出中，未写入任何仓库文件。
+- `literacy-station/__chk.js`（本地学习数据快照）已被 `.gitignore` 忽略，不会入库；不要用 `git add -f` 强加。
+
 ## 2026-11-17 章鱼游戏：去阴影/去追击 + 背景音乐
 
 **改动：**

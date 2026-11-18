@@ -4,7 +4,7 @@
 
 ## 仓库定位
 
-三个面向家人的轻量前端应用：Canvas 小游戏、笔记/产出工作台、学龄前识字练习台。
+一组面向家人的轻量前端作品：Canvas 小游戏、笔记/产出工作台、学龄前识字练习台，外加一个作品集与小工具门户站（portfolio-tools）。
 
 - 每个项目都是**单文件 HTML（内联 CSS/JS）+ 少量资源**，无构建工具、无 npm 依赖、无 CDN 外链，可离线运行。
 - 数据持久化在浏览器 localStorage，均提供 JSON 导出/导入。
@@ -25,6 +25,8 @@ family-mini-apps/
 │   ├── index.html
 │   ├── __chk.js         # 题库检查点（被 .gitignore 忽略，不入库）
 │   └── css/ assets/     # 预留空目录（.gitkeep）
+├── portfolio-tools/     # 作品集 + 小工具（单页站）
+│   └── index.html
 ├── AGENTS.md  CHANGELOG.md  README.md  LICENSE
 ```
 
@@ -100,6 +102,16 @@ family-mini-apps/
 - 「保存检查点」是**生成并下载**新的 `__chk.js`，需要手动覆盖仓库里的同名文件；浏览器不能直接写本地文件。刷新页面后 `BACKUP_STATE` 才更新。
 - 「还原」把 `__chk.js` 的题库数据恢复到 `wb_literacy_db`；「清空」保留 `parentPwd` 但清掉其余数据。
 - `__chk.js` 必须与 `index.html` 同级（`<script src="__chk.js">` 在页面里加载），**不能移到 `js/` 子目录**。
+
+### portfolio-tools/（作品集 + 小工具）
+
+- 编辑式极简风格的单页站：作品集区展示三个家庭应用卡片，小工具区提供三个浏览器内工具。
+- 三个小工具均为**内存态、不写 localStorage**，刷新即重置：
+  - 番茄钟：专注 25 / 休息 5 分钟切换，SVG 圆环进度，结束时 Web Audio 提示音，完成专注轮自动进入休息。
+  - 字数统计：实时统计总字符、不含空格字符、中文汉字、英文单词、行数、预估阅读时长。
+  - 调色板生成器：随机生成和谐五色（邻近 + 互补），点击色块复制十六进制色值。
+- 纯单文件内联 CSS/JS，无外部资源、无 CDN，离线可跑；已通过部署插件公开上线（URL 见 CHANGELOG）。
+- 不持久化任何用户数据，因此无 localStorage 键、无导入导出。
 
 ## 常见任务指引
 

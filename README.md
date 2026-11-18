@@ -1,6 +1,6 @@
 # family-mini-apps
 
-一组给家人（尤其是孩子）用的轻量前端小应用：一个 Canvas 小游戏、一个笔记/产出工作台、一个学龄前识字练习台。
+一组给家人（尤其是孩子）用的轻量前端小应用：一个 Canvas 小游戏、一个笔记/产出工作台、一个学龄前识字练习台，外加一个作品集与小工具门户站。
 
 全部是单文件 HTML + 内联 CSS/JS，无构建工具、无外部依赖，克隆后双击 `index.html` 即可运行，数据保存在浏览器 localStorage。
 
@@ -11,6 +11,7 @@
 | 海底大冒险（octopus-game） | [octopus-game/index.html](octopus-game/index.html) | Canvas 成长小游戏：操控**鲨鱼**从幼鲨一路长成成年鲨，吃较小猎物得分/成长，躲开较大危险生物；3 点生命、加速/磁铁/护盾道具、金色鱼高分、最高分记录、循环背景音乐；键盘 WASD/方向键或按住画面拖动，`P`/`Esc` 暂停、`M` 静音、`R` 重开 |
 | 笔记情况台（workbench） | [workbench/index.html](workbench/index.html) | 产出统计（今日/本周/本月/连续打卡）、近 14 天 SVG 折线图、复习计划（逾期标红、一键完成）、素材库（标签/来源/评分/搜索）、JSON 导入导出 |
 | 识字启蒙台（literacy-station） | [literacy-station/index.html](literacy-station/index.html) | 学龄前识字：每日 10 字 3D 翻卡（首次学会 +10 分）、识字练习/组词练习（答对 +5 分）、积分商城；家长模式管理题库与奖励（4 位数字 PIN） |
+| 作品集与小工具（portfolio-tools） | [portfolio-tools/index.html](portfolio-tools/index.html) | 编辑式极简单页站：作品集卡片展示三个家庭应用 + 三个浏览器内小工具（番茄钟、字数统计、调色板生成器）；纯内存态不写 localStorage，离线可用。已公开部署到 https://37kivaherdcil3ngep5.traesite.cn |
 
 ## 运行方式
 
@@ -36,6 +37,7 @@ npx serve .
 | octopus-game | `octopus_best_score`、`octopus_settings` | 最高分；静音与减少动效设置（`{muted,reducedMotion}`），损坏时自动回退默认值 |
 
 - 工作台和识字台都提供 JSON 导出/导入，换浏览器或清缓存前请先导出备份。
+- `portfolio-tools` 的小工具为临时内存态，**不持久化任何数据**，刷新页面即重置。
 - 识字台的题库检查点保存在 [literacy-station/__chk.js](literacy-station/__chk.js)：家长模式点「保存」会生成并下载新的 `__chk.js`（需手动覆盖仓库里的同名文件），点「还原」从该文件恢复。该文件是**本地数据快照**，已在 `.gitignore` 中忽略，不会被提交；刚克隆的仓库没有它时，页面使用内置默认题库。
 
 ## 仓库结构
@@ -53,6 +55,8 @@ family-mini-apps/
     ├── index.html
     ├── __chk.js         # 题库检查点（git 忽略）
     └── css/ assets/     # 预留占位（.gitkeep）
+└── portfolio-tools/     # 作品集 + 小工具（单页站）
+    └── index.html
 ```
 
 ## 开发要点
