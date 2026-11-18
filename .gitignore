@@ -14,6 +14,7 @@ literacy-station/__chk.js
 .claude/
 .zcode/
 .trae/
+.screenshots/
 
 # Node（如果以后加构建工具）
 node_modules/
