@@ -143,6 +143,6 @@ family-mini-apps/
 
 ## Git 约定
 
-- `.gitignore` 已忽略编辑器/AI 工具目录（`.vscode/`、`.idea/`、`.kilo/`、`.mimosa/`、`.claude/`、`.zcode/`、`.trae/`、`.screenshots/`）、`node_modules/`、系统临时文件、`literacy-station/__chk.js`。
+- `.gitignore` 已忽略编辑器/AI 工具目录（`.vscode/`、`.idea/`、`.kilo/`、`.mimosa/`、`.claude/`、`.zcode/`、`.trae/`、`.screenshots/`、`.playwright-cli/`）、`node_modules/`、系统临时文件、`literacy-station/__chk.js`。
 - 提交信息用简短中文或英文描述改动即可。
 - 中文内容只出现在 HTML/JS/文档内部，文件名和目录名一律英文。

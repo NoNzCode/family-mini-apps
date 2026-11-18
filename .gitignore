@@ -15,6 +15,7 @@ literacy-station/__chk.js
 .zcode/
 .trae/
 .screenshots/
+.playwright-cli/
 
 # Node（如果以后加构建工具）
 node_modules/
