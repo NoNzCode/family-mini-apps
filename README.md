@@ -2,14 +2,14 @@
 
 一组给家人（尤其是孩子）用的轻量前端小应用：海底大冒险、像素机甲对战两个小游戏，一个笔记/产出工作台、一个学龄前识字练习台，外加一个作品集与小工具门户站。
 
-全部是单文件 HTML + 内联 CSS/JS，无构建工具、无外部依赖，克隆后双击 `index.html` 即可运行，数据保存在浏览器 localStorage。
+全部是单文件 HTML + 内联 CSS/JS，无构建工具、无外部依赖，克隆后双击 `index.html` 即可运行；需要保存数据的项目把状态存在浏览器 localStorage。
 
 ## 项目一览
 
 | 项目 | 入口 | 说明 |
 |---|---|---|
 | 海底大冒险（octopus-game） | [octopus-game/index.html](octopus-game/index.html) | Canvas 成长小游戏：操控**鲨鱼**从幼鲨一路长成成年鲨，吃较小猎物得分/成长，躲开较大危险生物；3 点生命、加速/磁铁/护盾道具、金色鱼高分、最高分记录、循环背景音乐；键盘 WASD/方向键或按住画面拖动，`P`/`Esc` 暂停、`M` 静音、`R` 重开 |
-| 像素机甲（pixel-mecha） | [pixel-mecha/index.html](pixel-mecha/index.html) | 像素风机甲对战：同屏双人或挑战 CPU「赤蝎」，移动/斩击/炮击/防御，血量与能量核心，三局两胜；P1 `WASD`+`F/G/H`，P2 方向键+`J/K/L`，`P` 暂停 `M` 静音；Web Audio 本地合成音效，纯前端单文件离线可跑，不写 localStorage |
+| 像素机甲（pixel-mecha） | [pixel-mecha/index.html](pixel-mecha/index.html) | 复古像素 1v1 机甲对战：同屏双人或挑战 CPU「赤蝎」，移动/跳跃/斩击/炮击/防御，护盾格挡与破防，血量归零或 60 秒时间到判定，三局两胜；P1 `WASD`+`F/G/H`，P2 方向键+`J/K/L`，`P` 暂停 `M` 静音；程序化像素素材、无外部资源，Web Audio 合成音效；触屏设备提示需要键盘，不写 localStorage |
 | 笔记情况台（workbench） | [workbench/index.html](workbench/index.html) | 产出统计（今日/本周/本月/连续打卡）、近 14 天 SVG 折线图、复习计划（逾期标红、一键完成）、素材库（标签/来源/评分/搜索）、JSON 导入导出 |
 | 识字启蒙台（literacy-station） | [literacy-station/index.html](literacy-station/index.html) | 学龄前识字：每日 10 字 3D 翻卡（首次学会 +10 分）、识字练习/组词练习（答对 +5 分）、积分商城；家长模式管理题库与奖励（4 位数字 PIN） |
 | 作品集与小工具（portfolio-tools） | [portfolio-tools/index.html](portfolio-tools/index.html) | 编辑式极简单页站：作品集卡片展示三个家庭应用 + 三个浏览器内小工具（番茄钟、字数统计、调色板生成器）；纯内存态不写 localStorage，离线可用。已公开部署到 https://37kivaherdcil3ngep5.traesite.cn |
@@ -28,7 +28,7 @@ npx serve .
 - **海底大冒险**：桌面/手机浏览器均可；键盘或按住画面拖动操作。需 `octopus-game/assets/` 下角色/背景图与 `anim/` 48 张动画帧存在（背景使用无水印版 `seabed-clean.png`，原 `seabed.png` 保留）。
 - **笔记情况台**：桌面/手机浏览器均可。
 - **识字启蒙台**：桌面/手机浏览器均可；宝宝模式默认进入，家长模式首次进入需设置 4 位密码。
-- **像素机甲**：桌面浏览器（需键盘）；同屏双人或挑战 CPU，P1 `WASD`+`F/G/H`，P2 方向键+`J/K/L`，`P` 暂停 `M` 静音。
+- **像素机甲**：桌面浏览器（需键盘）；同屏双人或挑战 CPU。P1 `WASD`+`F/G/H`（跳跃/斩击/炮击/防御），P2 方向键+`J/K/L`，`P` 暂停 `M` 静音；触屏设备会显示「需要键盘」提示。
 
 ## 数据与备份
 
